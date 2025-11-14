@@ -1,254 +1,244 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
-from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base, relationship
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, ForeignKey
+from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base, relationship
+from werkzeug.security import generate_password_hash, check_password_hash
 
-
-engine = create_engine('sqlite:///informacoes.sqlite3')
-
-# Gerencia as sessões com o Banco de Dados
-db_session = scoped_session(sessionmaker(bind=engine))
-
+# Configuração do banco de dados
+engine = create_engine('sqlite:///Banco.db', connect_args={"check_same_thread": False})
+local_session = scoped_session(sessionmaker(bind=engine))
 
 Base = declarative_base()
-Base.query = db_session.query_property()
 
 
-# MODELO USUÁRIOS
-class User(Base):
-    __tablename__ = "usuario"
-    id = Column(Integer, primary_key=True)
-    nome = Column(String(100), nullable=False, index=True)
-    email = Column(String(120), unique=True, nullable=False, index=True)
-    senha = Column(String(200), nullable=False, index=True)
-    perfil = Column(String(50), default="cliente", nullable=False, index=True)
+class Categoria(Base):
+    __tablename__ = 'categorias'
+    id_categoria = Column(Integer, primary_key=True)
+    nome_categoria = Column(String(50), nullable=False, unique=True)
 
-    pedidos = relationship("Order", backref="usuario", lazy=True)
-    reviews = relationship("Review", backref="autor", lazy=True)
-    pesquisas = relationship("SearchHistory", backref="usuario", lazy=True)
+    # Relação com Produto
+    produtos = relationship("Produto", back_populates="categoria")
 
     def __repr__(self):
-        return '<User: {} {} {} {}>'.format( self.nome,
-                                              self.email,
-                                              self.senha,
-                                              self.perfil
-                                              )
+        return f"<Categoria(nome={self.nome_categoria})>"
 
-    # Função para Salvar no Banco
-    def save(self):
-        db_session.add(self)
-        db_session.commit()
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
 
-    # Função para Deletar no Banco
-    def delete(self):
-        db_session.delete(self)
-        db_session.commit()
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
 
-    # Coloca os Dados na Tabela
     def serialize(self):
-        dados_user = {
-            'nome': self.nome,
-            'categoria': self.email,
-            'senha': self.senha,
-            'perfil': self.perfil,
+        var_categoria = {
+            'id_categoria': self.id_categoria,
         }
-        return dados_user
+        return var_categoria
 
 
+class Produto(Base):
+    __tablename__ = 'produtos'
+    id_produto = Column(Integer, primary_key=True)
+    nome_produto = Column(String(50), nullable=False)
+    qtd_produto = Column(Integer, default=0, nullable=False, index=True)
+    tamanho = Column(String(20))
+    marca_produto = Column(String(30))
+    custo_produto = Column(Float, nullable=False)
+    genero = Column(String(20))
+    disponivel = Column(Boolean, default=True)
 
-# MODELO PRODUTOS
-class Product(Base):
-    __tablename__ = "produto"
-    id = Column(Integer, primary_key=True)
-    nome = Column(String(100), nullable=False, index=True)
-    descricao = Column(String(200), nullable=False, index=True)
-    preco = Column(Integer, nullable=False, index=True)
-    imagem_url = Column(String(255), nullable=False, index=True)
-    validade = Column(String(50), nullable=False, index=True)
-    quantidade = Column(Integer, nullable=False, index=True)
-    categoria = Column(String(50), nullable=False, index=True)
+    id_categoria = Column(Integer, ForeignKey('categorias.id_categoria'))
+    categoria = relationship("Categoria", back_populates="produtos")
 
-    itens = relationship("OrderItem", backref="produto", lazy=True)
-    reviews = relationship("Review", backref="produto", lazy=True)
+    # Relações com Venda e Entrada
+    vendas = relationship("Venda", back_populates="produto")
+    entradas = relationship("Entrada", back_populates="produto")
 
     def __repr__(self):
-        return '<Produto: {} {} {} {} {} {} {}>'.format( self.nome,
-                                                        self.descricao,
-                                                        self.preco,
-                                                        self.imagem_url,
-                                                        self.validade,
-                                                        self.quantidade,
-                                                        self.categoria,
-                                                        )
+        return f"<Produto(nome={self.nome_produto}, marca={self.marca_produto})>"
 
-    # Função para Salvar no Banco
-    def save(self):
-        db_session.add(self)
-        db_session.commit()
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
 
-    # Função para Deletar no Banco
-    def delete(self):
-        db_session.delete(self)
-        db_session.commit()
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
 
-    # Coloca os Dados na Tabela
     def serialize(self):
-        dados_user = {
-            'nome': self.nome,
-            'descricao': self.descricao,
-            'preco': self.preco,
-            'imagem_url': self.imagem_url,
-            'validade': self.validade,
-            'quantidade': self.quantidade,
-            'categoria': self.categoria,
+        var_produto = {
+            'id_produto': self.id_produto,
+            'nome_produto': self.nome_produto,
+            'qtd_produto': self.qtd_produto,
+            'genero': self.genero,
+            'tamanho': self.tamanho,
+            'marca_produto': self.marca_produto,
+            'custo_produto': self.custo_produto,
+            'disponivel': self.disponivel,
+            'id_categoria': self.id_categoria,
         }
-        return dados_user
+        return var_produto
 
 
-# MODELO PEDIDOS
-class Order(Base):
-    __tablename__ = "order"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False, index=True)
-    status = Column(String(50), default="pendente", nullable=False, index=True)
-    local_origem = Column(String(100), nullable=False, index=True)
-    horario_abertura = Column(String(50), nullable=False, index=True)
+class Pessoa(Base):
+    __tablename__ = 'pessoas'
+    id_pessoa = Column(Integer, primary_key=True)
+    nome_pessoa = Column(String(50), nullable=False)
+    cpf_pessoa = Column(String(14), unique=True)
+    cargo = Column(String(30))
+    senha_hash = Column(String(128))
+    status = Column(Boolean, default=True)
 
-    itens = relationship("OrderItem", backref="pedido", lazy=True)
+    # Relações
+    vendas = relationship("Venda", back_populates="pessoa")
+    entradas = relationship("Entrada", back_populates="pessoa")
 
     def __repr__(self):
-        return '<Produto: {} {} {} {}>'.format( self.user_id,
-                                                        self.status,
-                                                        self.local_origem,
-                                                        self.horario_abertura,
-                                                        )
+        return f"<Pessoa(nome={self.nome_pessoa}, cargo={self.cargo})>"
 
-    # Função para Salvar no Banco
-    def save(self):
-        db_session.add(self)
-        db_session.commit()
+    def set_senha_hash(self, senha):
+        self.senha_hash = generate_password_hash(senha)
 
-    # Função para Deletar no Banco
-    def delete(self):
-        db_session.delete(self)
-        db_session.commit()
+    def check_password_hash(self, senha):
+        return check_password_hash(self.senha_hash, senha)
 
-    # Coloca os Dados na Tabela
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
     def serialize(self):
-        dados_user = {
-            'user_id': self.user_id,
+        var_pessoa = {
+            'id_pessoa': self.id_pessoa,
+            'nome_pessoa': self.nome_pessoa,
+            'cpf_pessoa': self.cpf_pessoa,
+            'cargo': self.cargo,
             'status': self.status,
-            'local_origem': self.local_origem,
-            'horario_abertura': self.horario_abertura,
         }
-        return dados_user
+        return var_pessoa
 
 
-# MODELO ITENS DO PEDIDO
-class OrderItem(Base):
-    id = Column(Integer, primary_key=True)
-    order_id = Column(Integer, ForeignKey("order.id"), nullable=False)
-    product_id = Column(Integer, ForeignKey("product.id"), nullable=False)
-    quantidade = Column(Integer, nullable=False, index=True)
-    preco_unitario = Column(String(100), nullable=False, index=True)
+class Venda(Base):
+    __tablename__ = 'vendas'
+    id_venda = Column(Integer, primary_key=True)
+    forma_pagamento = Column(String(30))
+    quantidade = Column(Integer, nullable=False)
+    data_emissao = Column(String(30))
+    valor_venda = Column(Float, nullable=False)
+
+    id_pessoa = Column(Integer, ForeignKey('pessoas.id_pessoa'))
+    id_produto = Column(Integer, ForeignKey('produtos.id_produto'))
+
+    pessoa = relationship("Pessoa", back_populates="vendas")
+    produto = relationship("Produto", back_populates="vendas")
 
     def __repr__(self):
-        return '<Produto: {} {} {} {}>'.format( self.order_id,
-                                                        self.product_id,
-                                                        self.quantidade,
-                                                        self.preco_unitario,
-                                                        )
+        return f"<Venda(id={self.id_venda}, produto={self.id_produto}, quantidade={self.quantidade})>"
 
-    # Função para Salvar no Banco
-    def save(self):
-        db_session.add(self)
-        db_session.commit()
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
 
-    # Função para Deletar no Banco
-    def delete(self):
-        db_session.delete(self)
-        db_session.commit()
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
 
-    # Coloca os Dados na Tabela
     def serialize(self):
-        dados_user = {
-            'order_id': self.order_id,
-            'product_id': self.product_id,
+        var_venda = {
+            'id_venda': self.id_venda,
+            'forma_pagamento': self.forma_pagamento,
             'quantidade': self.quantidade,
-            'preco_unitario': self.preco_unitario,
+            'data_emissao': self.data_emissao,
+            'valor_venda': self.valor_venda,
+            'id_pessoa': self.id_pessoa,
+            'id_produto': self.id_produto,
         }
-        return dados_user
+        return var_venda
 
 
-# MODELO REVIEWS
-class Review(Base):
-    __tablename__ = "review"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    product_id = Column(Integer, ForeignKey("product.id"), nullable=False)
-    nota = Column(Integer, nullable=False, index=True)
-    comentario = Column(String(100), nullable=False, index=True)
+class Entrada(Base):
+    __tablename__ = 'entradas'
+    id_entrada = Column(Integer, primary_key=True)
+    nota_fiscal = Column(String(50))
+    valor_entrada = Column(Float, nullable=False)
+    quantidade = Column(Integer, nullable=False)
+    data_entrada = Column(String(30))
+
+    id_pessoa = Column(Integer, ForeignKey('pessoas.id_pessoa'))
+    id_produto = Column(Integer, ForeignKey('produtos.id_produto'))
+
+    pessoa = relationship("Pessoa", back_populates="entradas")
+    produto = relationship("Produto", back_populates="entradas")
 
     def __repr__(self):
-        return '<Produto: {} {} {} {}>'.format( self.user_id,
-                                                        self.product_id,
-                                                        self.nota,
-                                                        self.comentario,
-                                                        )
+        return f"<Entrada(id={self.id_entrada}, produto={self.id_produto}, quantidade={self.quantidade})>"
 
-    # Função para Salvar no Banco
-    def save(self):
-        db_session.add(self)
-        db_session.commit()
 
-    # Função para Deletar no Banco
-    def delete(self):
-        db_session.delete(self)
-        db_session.commit()
+    def save(self, db_session):
+        try:
+            db_session.add(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
 
-    # Coloca os Dados na Tabela
+    def delete(self, db_session):
+        try:
+            db_session.delete(self)
+            db_session.commit()
+        except:
+            db_session.rollback()
+            raise
+
     def serialize(self):
-        dados_user = {
-            'user_id': self.user_id,
-            'product_id': self.product_id,
-            'nota': self.nota,
-            'comentario': self.comentario,
+        var_entrada = {
+            'id_entrada': self.id_entrada,
+            'nota_fiscal': self.nota_fiscal,
+            'valor_entrada': self.valor_entrada,
+            'quantidade': self.quantidade,
+            'data_entrada': self.data_entrada,
+            'id_pessoa': self.id_pessoa,
+            'id_produto': self.id_produto,
         }
-        return dados_user
+        return var_entrada
 
 
-# MODELO HISTÓRICO DE PESQUISA
-class SearchHistory(Base):
-    __tablename__ = "search_history"
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    termo_pesquisa = Column(String(255), nullable=False, index=True)
-
-    def __repr__(self):
-        return '<Produto: {} {}>'.format( self.user_id,
-                                                self.termo_pesquisa,
-                                                )
-
-    # Função para Salvar no Banco
-    def save(self):
-        db_session.add(self)
-        db_session.commit()
-
-    # Função para Deletar no Banco
-    def delete(self):
-        db_session.delete(self)
-        db_session.commit()
-
-    # Coloca os Dados na Tabela
-    def serialize(self):
-        dados_user = {
-            'user_id': self.user_id,
-            'termo_pesquisa': self.termo_pesquisa,
-        }
-        return dados_user
-
-# Método para criar Banco
 def init_db():
     Base.metadata.create_all(bind=engine)
-
 
 if __name__ == '__main__':
     init_db()
