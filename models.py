@@ -10,6 +10,7 @@ Base = declarative_base()
 
 
 class Categoria(Base):
+    # Tabela Categorias
     __tablename__ = 'categorias'
     id_categoria = Column(Integer, primary_key=True)
     nome_categoria = Column(String(50), nullable=False, unique=True)
@@ -20,22 +21,27 @@ class Categoria(Base):
     def __repr__(self):
         return f"<Categoria(nome={self.nome_categoria})>"
 
+    # Salva as Informações de Categoria
     def save(self, db_session):
         try:
             db_session.add(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Deleta as Informações de Categoria
     def delete(self, db_session):
         try:
             db_session.delete(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Serializa a Categoria
     def serialize(self):
         var_categoria = {
             'id_categoria': self.id_categoria,
@@ -44,6 +50,7 @@ class Categoria(Base):
 
 
 class Produto(Base):
+    # Tabela Produtos
     __tablename__ = 'produtos'
     id_produto = Column(Integer, primary_key=True)
     nome_produto = Column(String(50), nullable=False)
@@ -64,22 +71,27 @@ class Produto(Base):
     def __repr__(self):
         return f"<Produto(nome={self.nome_produto}, marca={self.marca_produto})>"
 
+    # Salva as Informações do Produto
     def save(self, db_session):
         try:
             db_session.add(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Deleta as Informações do Produto
     def delete(self, db_session):
         try:
             db_session.delete(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Serializa o Produto
     def serialize(self):
         var_produto = {
             'id_produto': self.id_produto,
@@ -96,6 +108,7 @@ class Produto(Base):
 
 
 class Pessoa(Base):
+    # Tabela Pessoas
     __tablename__ = 'pessoas'
     id_pessoa = Column(Integer, primary_key=True)
     nome_pessoa = Column(String(50), nullable=False)
@@ -111,28 +124,35 @@ class Pessoa(Base):
     def __repr__(self):
         return f"<Pessoa(nome={self.nome_pessoa}, cargo={self.cargo})>"
 
+    # Gera uma Senha Hash para a Pessoa
     def set_senha_hash(self, senha):
         self.senha_hash = generate_password_hash(senha)
 
+    # Verifica a Senha Hash da Pessoa
     def check_password_hash(self, senha):
         return check_password_hash(self.senha_hash, senha)
 
+    # Salva as Informações da Pessoa
     def save(self, db_session):
         try:
             db_session.add(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Deleta as Informações da Pessoa
     def delete(self, db_session):
         try:
             db_session.delete(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Serializa as Informações da Pessoa
     def serialize(self):
         var_pessoa = {
             'id_pessoa': self.id_pessoa,
@@ -145,6 +165,7 @@ class Pessoa(Base):
 
 
 class Venda(Base):
+    # Tabela Vendas
     __tablename__ = 'vendas'
     id_venda = Column(Integer, primary_key=True)
     forma_pagamento = Column(String(30))
@@ -161,22 +182,27 @@ class Venda(Base):
     def __repr__(self):
         return f"<Venda(id={self.id_venda}, produto={self.id_produto}, quantidade={self.quantidade})>"
 
+    # Salva as Informações de Venda
     def save(self, db_session):
         try:
             db_session.add(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Deleta as Informações de Venda
     def delete(self, db_session):
         try:
             db_session.delete(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Serializa a Venda
     def serialize(self):
         var_venda = {
             'id_venda': self.id_venda,
@@ -191,6 +217,7 @@ class Venda(Base):
 
 
 class Entrada(Base):
+    # Tabela Entradas
     __tablename__ = 'entradas'
     id_entrada = Column(Integer, primary_key=True)
     nota_fiscal = Column(String(50))
@@ -207,23 +234,27 @@ class Entrada(Base):
     def __repr__(self):
         return f"<Entrada(id={self.id_entrada}, produto={self.id_produto}, quantidade={self.quantidade})>"
 
-
+    # Salva as Informações de Entrada
     def save(self, db_session):
         try:
             db_session.add(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Deleta as Informações de Entrada
     def delete(self, db_session):
         try:
             db_session.delete(self)
             db_session.commit()
+        # Retorna a Informação para não perder-lá caso ocorra algum Erro
         except:
             db_session.rollback()
             raise
 
+    # Serializa a Entrada
     def serialize(self):
         var_entrada = {
             'id_entrada': self.id_entrada,
@@ -237,8 +268,10 @@ class Entrada(Base):
         return var_entrada
 
 
+# Cria o Banco
 def init_db():
     Base.metadata.create_all(bind=engine)
 
+# Inicia o Banco
 if __name__ == '__main__':
     init_db()

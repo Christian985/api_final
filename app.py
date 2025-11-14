@@ -18,6 +18,7 @@ def cadastrar_pessoas():
         # Pega a Informação
         dados_pessoas = request.get_json()
 
+        # Campos Obrigatórios
         campos_obrigatorios = ["nome_pessoa", "cpf_pessoa", "cargo", "senha"]
 
         # Caso não exista o Campo
