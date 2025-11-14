@@ -9,6 +9,7 @@ app.config['JWT_SECRET_KEY'] = "03050710"
 jwt = JWTManager(app)
 
 
+
 # Cadastro (POST)
 @app.route('/pessoas', methods=['POST'])
 def cadastrar_pessoas():
@@ -292,6 +293,7 @@ def cadastrar_categoria():
         db_session.close()
 
 
+
 # LISTAR (GET)
 @app.route('/produtos', methods=['GET'])
 def listar_produtos():
@@ -407,6 +409,7 @@ def listar_pessoas():
     # Fecha o Banco
     finally:
         db_session.close()
+
 
 
 # EDITAR (PUT)
