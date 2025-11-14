@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, F
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base, relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Configuração do banco de dados
+# Configuração do Banco de Dados
 engine = create_engine('sqlite:///Banco.db', connect_args={"check_same_thread": False})
 local_session = scoped_session(sessionmaker(bind=engine))
 
