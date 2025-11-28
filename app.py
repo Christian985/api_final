@@ -11,109 +11,117 @@ jwt = JWTManager(app)
 
 
 # Cadastro (POST)
-@app.route('/pessoas', methods=['POST'])
+@app.route('/pessoas/cadastrar', methods=['POST'])
 def cadastrar_pessoas():
-    # Abre o Banco
     db_session = local_session()
     try:
-        # Pega a Informação
         dados_pessoas = request.get_json()
 
-        # Campos Obrigatórios
-        campos_obrigatorios = ["nome_pessoa", "cpf_pessoa", "cargo", "senha"]
-
-        # Caso não exista o Campo
+        campos_obrigatorios = ["nome_pessoa", "cpf_pessoa", "cargo", "senha", "status"]
         if not all(campo in dados_pessoas for campo in campos_obrigatorios):
             return jsonify({"error": "Campo inexistente"}), 400
 
-        # Caso não tenha Preenchido todos os Campos
         if any(not dados_pessoas[campo] for campo in campos_obrigatorios):
             return jsonify({"error": "Preencher todos os campos"}), 400
 
-        # Tabela para Cadastrar Pessoa
+        nome_pessoa = dados_pessoas["nome_pessoa"]
+        cpf = dados_pessoas["cpf_pessoa"]
+        cargo = dados_pessoas["cargo"]
+        senha = dados_pessoas["senha"]
+        status_texto = dados_pessoas["status"]   # ← vem como "Ativo" ou "Inativo"
+
+        # 🔥 CONVERSÃO DE TEXTO PARA BOOLEANO
+        status_limpo = status_texto.strip().lower()
+        if status_limpo == "ativo":
+            status_bool = True
+        elif status_limpo == "inativo":
+            status_bool = False
         else:
-            nome_pessoa = dados_pessoas["nome_pessoa"]
-            cpf = dados_pessoas["cpf_pessoa"]
-            cargo = dados_pessoas["cargo"]
-            senha = dados_pessoas["senha"]
+            return jsonify({"error": "Status inválido. Use 'Ativo' ou 'Inativo'."}), 400
 
-            # Caso o CPF tenha passado ou ultrapassado 11 Dígitos
-            if not cpf or len(cpf) != 11:
-                return jsonify({"msg": "O CPF deve conter exatamente 11 dígitos numéricos."}), 400
+        # Validação básica do CPF
+        if not cpf or len(cpf) != 11:
+            return jsonify({"msg": "O CPF deve conter exatamente 11 dígitos numéricos."}), 400
 
-            form_nova_pessoa = Pessoa(
-                nome_pessoa=nome_pessoa,
-                cpf_pessoa=cpf,
-                cargo=cargo
-            )
-            # Salva a Pessoa com Senha Hash
-            form_nova_pessoa.set_senha_hash(senha)
-            form_nova_pessoa.save(db_session)
-            # Coloc no Dicionário
-            dicio = form_nova_pessoa.serialize()
-            # Mostra se Cadastrou e todas as Pessoas Cadastradas
-            resultado = {"success": "Cadastrado com sucesso", "pessoas": dicio}
+        form_nova_pessoa = Pessoa(
+            nome_pessoa=nome_pessoa,
+            cpf_pessoa=cpf,
+            cargo=cargo,
+            status=status_bool,      # ← agora é booleano
+        )
 
-            return jsonify(resultado), 201
+        form_nova_pessoa.set_senha_hash(senha)
+        form_nova_pessoa.save(db_session)
 
-    # Caso ocorra algum Erro
+        dicio = form_nova_pessoa.serialize()
+        resultado = {"success": "Cadastrado com sucesso", "pessoas": dicio}
+
+        return jsonify(resultado), 201
+
     except Exception as e:
         return jsonify({"error": str(e)})
-    # Fecha o Banco
+
     finally:
         db_session.close()
 
 
-@app.route('/produtos', methods=['POST'])
+
+@app.route('/produtos/cadastrar', methods=['POST'])
 def cadastrar_produto():
-    # Abre o Banco
+    # Abre a sessão do banco
     db_session = local_session()
     try:
-        # Pega a Informação
+        # Recebe os dados enviados pelo JS (JSON)
         dados_produto = request.get_json()
 
-        # Campos Obrigatórios
-        campos_obrigatorios = ["id_categoria", "nome_produto", "tamanho", "genero", "marca_produto", "custo_produto"]
+        # Campos obrigatórios
+        campos_obrigatorios = [
+            "id_categoria",
+            "nome_produto",
+            "tamanho",
+            "genero",
+            "marca_produto",
+            "custo_produto"
+        ]
 
-        # Caso não exista o Campo
+        # Verifica se algum campo obrigatório está faltando
         if not all(campo in dados_produto for campo in campos_obrigatorios):
             return jsonify({"error": "Campo inexistente"}), 400
 
-        # Caso não tenha Preenchido todos os Campos
-        if any(not dados_produto[campo] for campo in campos_obrigatorios):
+        # Verifica se algum campo obrigatório está vazio (None ou string vazia)
+        if any(dados_produto[campo] in [None, ""] for campo in campos_obrigatorios):
             return jsonify({"error": "Preencher todos os campos"}), 400
 
-        # Tabela para Cadastrar Produto
-        else:
-            id_categoria = dados_produto['id_categoria']
-            nome_produto = dados_produto['nome_produto']
-            tamanho = dados_produto['tamanho']
-            marca_produto = dados_produto['marca_produto']
-            custo_produto = dados_produto['custo_produto']
-            genero = dados_produto['genero']
-            form_novo_produto = Produto(
-                id_categoria=id_categoria,
-                nome_produto=nome_produto,
-                tamanho=tamanho,
-                marca_produto=marca_produto,
-                custo_produto=custo_produto,
-                genero=genero
-            )
-            # Salva o Produto
-            form_novo_produto.save(db_session)
-            # Coloca o Produto no Dicionário
-            dicio = form_novo_produto.serialize()
-            # Mostra se Cadastrou e todas os Produtos
-            resultado = {"success": "Cadastrado com sucesso", "produtos": dicio}
+        # Monta o objeto Produto
+        form_novo_produto = Produto(
+            id_categoria=dados_produto['id_categoria'],
+            nome_produto=dados_produto['nome_produto'],
+            tamanho=dados_produto['tamanho'],
+            genero=dados_produto['genero'],
+            marca_produto=dados_produto['marca_produto'],
+            custo_produto=dados_produto['custo_produto']
+        )
 
-            return jsonify(resultado), 201
+        # Salva no banco
+        form_novo_produto.save(db_session)
 
-    # Caso ocorra algum Erro
+        # Serializa o produto cadastrado
+        produto_serializado = form_novo_produto.serialize()
+
+        # Retorna sucesso + dados do produto
+        return jsonify({
+            "success": "Produto cadastrado com sucesso!",
+            "produtos": produto_serializado
+        }), 201
+
     except Exception as e:
-        return jsonify({"error": str(e)})
-    # Fecha o Banco
+        # Retorna erro caso ocorra algum problema
+        return jsonify({"error": str(e)}), 500
+
     finally:
+        # Fecha a sessão do banco
         db_session.close()
+
 
 
 @app.route("/entradas", methods=["POST"])
@@ -295,7 +303,7 @@ def cadastrar_categoria():
 
 
 # LISTAR (GET)
-@app.route('/produtos', methods=['GET'])
+@app.route('/produtos/listar', methods=['GET'])
 def listar_produtos():
     # Abre o Banco
     db_session = local_session()
@@ -514,6 +522,7 @@ def editar_categoria(id_categoria):
         return jsonify({"error": str(e)})
     finally:
         db_session.close()
+
 
 
 @app.route('/pessoas/<id_pessoa>', methods=['PUT'])
