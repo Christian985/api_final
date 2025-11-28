@@ -47,7 +47,7 @@ def cadastrar_pessoas():
             nome_pessoa=nome_pessoa,
             cpf_pessoa=cpf,
             cargo=cargo,
-            status=status_bool,      # ← agora é booleano
+            status=status_bool,      # agora é booleano
         )
 
         form_nova_pessoa.set_senha_hash(senha)
