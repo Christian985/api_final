@@ -15,6 +15,8 @@
       <w>dados</w>
       <w>dicionário</w>
       <w>encontrado</w>
+      <w>enviados</w>
+      <w>faltando</w>
       <w>forma</w>
       <w>gestao</w>
       <w>histórico</w>
@@ -22,6 +24,7 @@
       <w>incorretos</w>
       <w>informacoes</w>
       <w>inválidos</w>
+      <w>limpo</w>
       <w>origem</w>
       <w>parado</w>
       <w>pedido</w>
@@ -32,15 +35,18 @@
       <w>printa</w>
       <w>produto</w>
       <w>realizado</w>
+      <w>recebe</w>
       <w>registrada</w>
       <w>registrado</w>
       <w>relações</w>
       <w>removido</w>
       <w>serializa</w>
+      <w>serializado</w>
       <w>sucedido</w>
       <w>ultrapassado</w>
       <w>unitario</w>
       <w>validade</w>
+      <w>vazia</w>
     </words>
   </dictionary>
 </component>

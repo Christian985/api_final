@@ -30,7 +30,7 @@ def cadastrar_pessoas():
         senha = dados_pessoas["senha"]
         status_texto = dados_pessoas["status"]   # ← vem como "Ativo" ou "Inativo"
 
-        # 🔥 CONVERSÃO DE TEXTO PARA BOOLEANO
+        #  CONVERSÃO DE TEXTO PARA BOOLEANO
         status_limpo = status_texto.strip().lower()
         if status_limpo == "ativo":
             status_bool = True
