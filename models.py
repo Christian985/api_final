@@ -43,10 +43,10 @@ class Categoria(Base):
 
     # Serializa a Categoria
     def serialize(self):
-        var_categoria = {
+        return {
             'id_categoria': self.id_categoria,
+            'nome_categoria': self.nome_categoria
         }
-        return var_categoria
 
 
 class Produto(Base):

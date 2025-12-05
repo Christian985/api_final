@@ -98,6 +98,7 @@ def cadastrar_produto():
             nome_produto=dados_produto['nome_produto'],
             tamanho=dados_produto['tamanho'],
             genero=dados_produto['genero'],
+            qtd_produto=dados_produto['qtd_produto'],
             marca_produto=dados_produto['marca_produto'],
             custo_produto=dados_produto['custo_produto']
         )
@@ -121,8 +122,6 @@ def cadastrar_produto():
     finally:
         # Fecha a sessão do banco
         db_session.close()
-
-
 
 @app.route("/entradas", methods=["POST"])
 def cadastrar_entrada():
@@ -188,7 +187,6 @@ def cadastrar_entrada():
     # Caso não tenha Salvado
     except Exception as e:
         return jsonify({"error": f"Erro ao salvar entrada: {str(e)}"}), 500
-
 
 @app.route('/vendas', methods=['POST'])
 def cadastrar_venda():
@@ -260,8 +258,7 @@ def cadastrar_venda():
     finally:
         db_session.close()
 
-
-@app.route('/categorias', methods=['POST'])
+@app.route('/cadastrar_categorias', methods=['POST'])
 def cadastrar_categoria():
     # Abre o Banco
     db_session = local_session()
@@ -300,8 +297,6 @@ def cadastrar_categoria():
     finally:
         db_session.close()
 
-
-
 # LISTAR (GET)
 @app.route('/produtos/listar', methods=['GET'])
 def listar_produtos():
@@ -335,6 +330,7 @@ def listar_categorias():
         # Pega e Mostra todas as Categorias
         sql_categorias = select(Categoria)
         resultado_categorias = db_session.execute(sql_categorias).scalars()
+        print('resultado',resultado_categorias)
         categorias = []
         for n in resultado_categorias:
             categorias.append(n.serialize())
@@ -397,27 +393,24 @@ def listar_vendas():
 
 @app.route('/pessoas', methods=['GET'])
 def listar_pessoas():
-    # Abre o Banco
     db_session = local_session()
     try:
-        # Pega e mostra todas as Pessoas
         sql_pessoa = select(Pessoa)
         resultado_pessoas = db_session.execute(sql_pessoa).scalars()
-        pessoas = []
-        for n in resultado_pessoas:
-            pessoas.append(n.serialize())
+        pessoas = [n.serialize() for n in resultado_pessoas]
 
         return jsonify({
             "pessoas": pessoas,
             "success": "Listado com sucesso"
-        })
-    # Caso ocorra um Erro
+        }), 200
     except Exception as e:
-        return jsonify({"error": str(e)})
-    # Fecha o Banco
+        # Retorna estrutura consistente com 'pessoas' (vazia) e 'error'
+        return jsonify({
+            "pessoas": [],
+            "error": str(e)
+        }), 500
     finally:
         db_session.close()
-
 
 
 # EDITAR (PUT)
